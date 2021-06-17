@@ -14,5 +14,6 @@
 extern uint16_t DISPLAY[DISP_HEIGHT][DISP_WIDTH];
 
 void DISP_conv_to_FRAME(void);
+void TCON_conv_to_DISPLAY(void);
 
 #endif /* INC_DISPLAY_H_ */

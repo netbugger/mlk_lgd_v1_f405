@@ -159,10 +159,13 @@ int main(void)
 				}
 
 				// Transfer Data
+				TCON_conv_to_DISPLAY();
+				void DISP_conv_to_FRAME();
 
 				TCON_SPI_RESET2();
 
 				// Send To MBI
+				MLK_SPI_write_frame_data();
 
 #if 0
 				//HAL_Delay(1000);
