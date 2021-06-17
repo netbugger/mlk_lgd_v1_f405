@@ -45,25 +45,29 @@
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi2;
+SPI_HandleTypeDef hspi3;
 DMA_HandleTypeDef hdma_spi2_rx;
 
 TIM_HandleTypeDef htim6;
 
-UART_HandleTypeDef huart5;
+UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
 uint8_t gVsyncFlag = 0;
 uint8_t tcon_data[TCON_FRAME_LEN];
+uint8_t tInd, tchksum;
 uint8_t tconFlag = 0;
+extern uint8_t tcon_vsyncFlag;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_UART5_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_SPI2_Init(void);
+static void MX_SPI3_Init(void);
+static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -102,9 +106,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_UART5_Init();
   MX_TIM6_Init();
   MX_SPI2_Init();
+  MX_SPI3_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 	DWT_Delay_Init();
 	MLK_SPI_init();
@@ -149,8 +154,62 @@ int main(void)
 			__asm volatile("NOP");
 		}
 #endif
-		printf("Hello\n");
-		HAL_Delay(1000);
+		//printf("Hello\n");
+		//HAL_Delay(1000);
+		if(tconFlag) {
+			uint8_t c = 0;
+			if(tcon_data[0] != 0xaa) {
+				printf("indicator fail, %x\n", tcon_data[0]);
+				HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+				HAL_DMA_DeInit(&hdma_spi2_rx);
+				HAL_SPI_DeInit(&hspi2);
+
+				MX_DMA_Init();
+				MX_SPI2_Init();
+				HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+				HAL_SPI_TransmitReceive(&hspi2, &c, &c, 1, 100);
+				tconFlag = 0;
+				tcon_vsyncFlag = 0;
+			}
+			else {
+				printf("SPI : %x, %x\n", tInd, tchksum);
+				c = tcon_data[0] ^ tcon_data[1];
+				for(i=2; i<TCON_FRAME_LEN-1; i++) {
+					c ^= tcon_data[i];
+					if(tcon_data[i]) {
+						//printf("[%d]%x\n", i, tcon_data[i]);
+					}
+				}
+
+				//HAL_DMA_DeInit(&hdma_spi2_rx);
+				//MX_DMA_Init();
+				//			MX_SPI2_Init();
+				//HAL_SPI_Receive_DMA(&hspi2, tcon_data, TCON_FRAME_LEN);
+				// Verify checksum
+				if(c == tchksum) {
+				//	printf("1\n");
+				}
+				else {
+					printf("%x\n", c);
+				}
+				//HAL_Delay(1000);
+				tcon_data[0] = 0;
+				tcon_data[128] = 0x18;
+				tcon_data[1010] = 0;
+				//HAL_DMA_Init(&hdma_spi2_rx);
+
+				MX_DMA_Init();
+				MX_SPI2_Init();
+				tconFlag = 0;
+				tcon_vsyncFlag = 0;
+			}
+
+		}
+		else {
+			__asm volatile("NOP");
+		}
+
+
   }
   /* USER CODE END 3 */
 }
@@ -217,11 +276,11 @@ static void MX_SPI2_Init(void)
   /* SPI2 parameter configuration*/
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_SLAVE;
-  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_HARD_INPUT;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -233,6 +292,43 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
+
+}
+
+/**
+  * @brief SPI3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI3_Init(void)
+{
+
+  /* USER CODE BEGIN SPI3_Init 0 */
+
+  /* USER CODE END SPI3_Init 0 */
+
+  /* USER CODE BEGIN SPI3_Init 1 */
+
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_SLAVE;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI3_Init 2 */
+
+  /* USER CODE END SPI3_Init 2 */
 
 }
 
@@ -275,35 +371,35 @@ static void MX_TIM6_Init(void)
 }
 
 /**
-  * @brief UART5 Initialization Function
+  * @brief UART4 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_UART5_Init(void)
+static void MX_UART4_Init(void)
 {
 
-  /* USER CODE BEGIN UART5_Init 0 */
+  /* USER CODE BEGIN UART4_Init 0 */
 
-  /* USER CODE END UART5_Init 0 */
+  /* USER CODE END UART4_Init 0 */
 
-  /* USER CODE BEGIN UART5_Init 1 */
+  /* USER CODE BEGIN UART4_Init 1 */
 
-  /* USER CODE END UART5_Init 1 */
-  huart5.Instance = UART5;
-  huart5.Init.BaudRate = 115200;
-  huart5.Init.WordLength = UART_WORDLENGTH_8B;
-  huart5.Init.StopBits = UART_STOPBITS_1;
-  huart5.Init.Parity = UART_PARITY_NONE;
-  huart5.Init.Mode = UART_MODE_TX_RX;
-  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart5) != HAL_OK)
+  /* USER CODE END UART4_Init 1 */
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = 115200;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_TX_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN UART5_Init 2 */
+  /* USER CODE BEGIN UART4_Init 2 */
 
-  /* USER CODE END UART5_Init 2 */
+  /* USER CODE END UART4_Init 2 */
 
 }
 
@@ -337,26 +433,28 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SCAN1_Pin|SDI4_Pin|SDI3_Pin|SDI2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SDI4_Pin|SDI3_Pin|SDI2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SCLK_Pin|SDI1_Pin|VSYNC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SCLK_Pin|SDI1_Pin|GP_IO_Pin|GPIO_PIN_7
+                          |VSYNC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, CS_Pin|EN_Pin|UART_GND_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : SCAN1_Pin SDI4_Pin SDI3_Pin SDI2_Pin */
-  GPIO_InitStruct.Pin = SCAN1_Pin|SDI4_Pin|SDI3_Pin|SDI2_Pin;
+  /*Configure GPIO pins : SDI4_Pin SDI3_Pin SDI2_Pin */
+  GPIO_InitStruct.Pin = SDI4_Pin|SDI3_Pin|SDI2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SCLK_Pin SDI1_Pin VSYNC_Pin */
-  GPIO_InitStruct.Pin = SCLK_Pin|SDI1_Pin|VSYNC_Pin;
+  /*Configure GPIO pins : SCLK_Pin SDI1_Pin GP_IO_Pin PB7
+                           VSYNC_Pin */
+  GPIO_InitStruct.Pin = SCLK_Pin|SDI1_Pin|GP_IO_Pin|GPIO_PIN_7
+                          |VSYNC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -368,6 +466,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : VSYNCI_Pin */
+  GPIO_InitStruct.Pin = VSYNCI_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(VSYNCI_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
@@ -383,10 +491,20 @@ void VSYNC_set_freq(int hz)
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+	static int cnt = 0;
 	if (htim->Instance == TIM6) {
-		gVsyncFlag = 1;
+		cnt++;
+		if(cnt == 2) {
+			//HAL_SPI_Receive_DMA(&hspi2, tcon_data, TCON_FRAME_LEN);
+			cnt = 0;
+		}
+		else {
+			__asm volatile("NOP");
+		}
+		//gVsyncFlag = 1;
 	}
 }
+
 /* USER CODE END 4 */
 
 /**

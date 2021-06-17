@@ -12,7 +12,8 @@
 
 #define TCON_WIDTH	24
 #define TCON_HEIGHT	48
-#define TCON_FRAME_LEN	1010	//indicator + (24*42) + checksum
+#define TCON_FRAME_LEN	1011	//indicator + (24*42) + checksum
+//#define TCON_FRAME_LEN	1	//indicator + (24*42) + checksum
 #define TCON_DATA_LEN	1008
 #define TCON_CHECKSUM_IDX	1009
 typedef struct {

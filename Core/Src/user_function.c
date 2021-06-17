@@ -7,8 +7,8 @@
 
 #include "stm32f4xx.h"
 
-extern UART_HandleTypeDef huart5;
-UART_HandleTypeDef *pUartPrint = &huart5;
+extern UART_HandleTypeDef huart4;
+UART_HandleTypeDef *pUartPrint = &huart4;
 void _putchar(char ch)
 {
 	/* Place your implementation of fputc here */
