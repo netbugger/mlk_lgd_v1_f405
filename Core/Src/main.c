@@ -47,6 +47,7 @@
 SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 DMA_HandleTypeDef hdma_spi2_rx;
+DMA_HandleTypeDef hdma_spi3_rx;
 
 TIM_HandleTypeDef htim6;
 
@@ -54,10 +55,7 @@ UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
 uint8_t gVsyncFlag = 0;
-uint8_t tcon_data[TCON_FRAME_LEN];
-uint8_t tInd, tchksum;
-uint8_t tconFlag = 0;
-extern uint8_t tcon_vsyncFlag;
+extern tcon_frame_t TCON_FRAME[];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +67,8 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
-
+void TCON_SPI_RESET(void);
+void TCON_SPI_RESET2(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -85,6 +84,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	uint16_t i = 0, j = 0, k = 0, l = 0;
+	uint8_t chksum[2];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -100,7 +100,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  TCON_init();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -111,6 +111,7 @@ int main(void)
   MX_SPI3_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+
 	DWT_Delay_Init();
 	MLK_SPI_init();
 
@@ -122,6 +123,7 @@ int main(void)
 
 	MLK_DISP_config();
 	HAL_TIM_Base_Start_IT(&htim6);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -130,6 +132,57 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		//printf("Hello\n");
+		//HAL_Delay(1000);
+		if(TCON_FRAME[0].complete && TCON_FRAME[1].complete) {
+			uint8_t c = 0;
+			if(TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL || TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL) {
+				printf("indicator fail\n");
+				TCON_SPI_RESET();
+			}
+			else {
+				printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
+						TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
+
+				// Check Sum
+				chksum[0] = TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] ^ TCON_FRAME[0].data[TCON_OFFSET_CMD];
+				chksum[1] = TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] ^ TCON_FRAME[1].data[TCON_OFFSET_CMD];
+				for(i=2; i<TCON_FRAME_LEN-1; i++) {
+					chksum[0] ^= TCON_FRAME[0].data[i];
+					chksum[1] ^= TCON_FRAME[1].data[i];
+
+				}
+
+				// Verify checksum
+				if(chksum[0] != TCON_FRAME[0].data[TCON_OFFSET_CHKSUM] || chksum[1] != TCON_FRAME[1].data[TCON_OFFSET_CHKSUM] ) {
+					printf("CHKSUM Fail\n");
+				}
+
+				// Transfer Data
+
+				TCON_SPI_RESET2();
+
+				// Send To MBI
+
+#if 0
+				//HAL_Delay(1000);
+				tcon_data[0] = 0;
+				tcon_data[128] = 0x18;
+				tcon_data[1010] = 0;
+				//HAL_DMA_Init(&hdma_spi2_rx);
+
+				MX_DMA_Init();
+				MX_SPI2_Init();
+				tconFlag = 0;
+				tcon_vsyncFlag = 0;
+#endif
+			}
+
+		}
+		else {
+			__asm volatile("NOP");
+		}
+
 #if 0
 		if (gVsyncFlag != 0) {
 			gVsyncFlag = 0;
@@ -154,62 +207,6 @@ int main(void)
 			__asm volatile("NOP");
 		}
 #endif
-		//printf("Hello\n");
-		//HAL_Delay(1000);
-		if(tconFlag) {
-			uint8_t c = 0;
-			if(tcon_data[0] != 0xaa) {
-				printf("indicator fail, %x\n", tcon_data[0]);
-				HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-				HAL_DMA_DeInit(&hdma_spi2_rx);
-				HAL_SPI_DeInit(&hspi2);
-
-				MX_DMA_Init();
-				MX_SPI2_Init();
-				HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-				HAL_SPI_TransmitReceive(&hspi2, &c, &c, 1, 100);
-				tconFlag = 0;
-				tcon_vsyncFlag = 0;
-			}
-			else {
-				printf("SPI : %x, %x\n", tInd, tchksum);
-				c = tcon_data[0] ^ tcon_data[1];
-				for(i=2; i<TCON_FRAME_LEN-1; i++) {
-					c ^= tcon_data[i];
-					if(tcon_data[i]) {
-						//printf("[%d]%x\n", i, tcon_data[i]);
-					}
-				}
-
-				//HAL_DMA_DeInit(&hdma_spi2_rx);
-				//MX_DMA_Init();
-				//			MX_SPI2_Init();
-				//HAL_SPI_Receive_DMA(&hspi2, tcon_data, TCON_FRAME_LEN);
-				// Verify checksum
-				if(c == tchksum) {
-				//	printf("1\n");
-				}
-				else {
-					printf("%x\n", c);
-				}
-				//HAL_Delay(1000);
-				tcon_data[0] = 0;
-				tcon_data[128] = 0x18;
-				tcon_data[1010] = 0;
-				//HAL_DMA_Init(&hdma_spi2_rx);
-
-				MX_DMA_Init();
-				MX_SPI2_Init();
-				tconFlag = 0;
-				tcon_vsyncFlag = 0;
-			}
-
-		}
-		else {
-			__asm volatile("NOP");
-		}
-
-
   }
   /* USER CODE END 3 */
 }
@@ -413,6 +410,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
@@ -433,6 +433,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SDI4_Pin|SDI3_Pin|SDI2_Pin, GPIO_PIN_RESET);
@@ -467,6 +468,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : VSYNCI2_Pin */
+  GPIO_InitStruct.Pin = VSYNCI2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(VSYNCI2_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : VSYNCI_Pin */
   GPIO_InitStruct.Pin = VSYNCI_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -474,12 +481,55 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(VSYNCI_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
+inline void TCON_SPI_RESET(void)
+{
+	uint8_t c = 0;
+	HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+	HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+	HAL_DMA_DeInit(TCON_FRAME[0].pHdma);
+	HAL_DMA_DeInit(TCON_FRAME[1].pHdma);
+	HAL_SPI_DeInit(TCON_FRAME[0].pHspi);
+	HAL_SPI_DeInit(TCON_FRAME[1].pHspi);
+
+	MX_DMA_Init();
+	MX_SPI2_Init();
+	MX_SPI3_Init();
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+	HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+	HAL_SPI_TransmitReceive(TCON_FRAME[0].pHspi, &c, &c, 1, 100);
+	HAL_SPI_TransmitReceive(TCON_FRAME[1].pHspi, &c, &c, 1, 100);
+	TCON_FRAME[0].complete = 0;
+	TCON_FRAME[0].vsync = 0;
+	TCON_FRAME[1].complete = 0;
+	TCON_FRAME[1].vsync = 0;
+}
+
+inline void TCON_SPI_RESET2(void)
+{
+	uint8_t c = 0;
+	HAL_DMA_DeInit(TCON_FRAME[0].pHdma);
+	HAL_DMA_DeInit(TCON_FRAME[1].pHdma);
+	HAL_SPI_DeInit(TCON_FRAME[0].pHspi);
+	HAL_SPI_DeInit(TCON_FRAME[1].pHspi);
+
+	MX_DMA_Init();
+	MX_SPI2_Init();
+	MX_SPI3_Init();
+
+	TCON_FRAME[0].complete = 0;
+	TCON_FRAME[0].vsync = 0;
+	TCON_FRAME[1].complete = 0;
+	TCON_FRAME[1].vsync = 0;
+}
 void VSYNC_set_freq(int hz)
 {
 	uint32_t prescaler = (640-1);

@@ -8,13 +8,73 @@
 #include "lg_tcon.h"
 #include "printf.h"
 
-tcon_frame_t TCON_FRAME;
-extern uint8_t tcon_data[];
-extern uint8_t tInd, tchksum, tconFlag;
-extern SPI_HandleTypeDef hspi2;
-SPI_HandleTypeDef *pSpi = &hspi2;
-extern DMA_HandleTypeDef hdma_spi2_rx;
-uint8_t tcon_vsyncFlag;
+tcon_frame_t TCON_FRAME[TCON_CH_NUM];
+extern SPI_HandleTypeDef hspi2, hspi3;
+extern DMA_HandleTypeDef hdma_spi2_rx, hdma_spi3_rx;
+
+
+#if 1
+void TCON_init(void)
+{
+	TCON_FRAME[0].pHspi = &hspi2;
+	TCON_FRAME[0].pHdma = &hdma_spi2_rx;
+	TCON_FRAME[0].complete = 0;
+	TCON_FRAME[0].vsync = 0;
+
+	TCON_FRAME[1].pHspi = &hspi3;
+	TCON_FRAME[1].pHdma = &hdma_spi3_rx;
+	TCON_FRAME[1].complete = 0;
+	TCON_FRAME[1].vsync = 0;
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t pin)
+{
+	// CH 0
+	tcon_frame_t *pFrame;
+	if(VSYNCI_Pin & pin && !TCON_FRAME[0].vsync) {
+		pFrame = &TCON_FRAME[0];
+		//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
+		//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
+		HAL_SPI_Receive_DMA(pFrame->pHspi, pFrame->data, TCON_FRAME_LEN);
+		pFrame->vsync = 1;
+	}
+	else if(VSYNCI2_Pin & pin && !TCON_FRAME[1].vsync) {
+		pFrame = &TCON_FRAME[1];
+		HAL_SPI_Receive_DMA(pFrame->pHspi, pFrame->data, TCON_FRAME_LEN);
+		pFrame->vsync = 1;
+	}
+	else {
+		__asm volatile("NOP");
+	}
+}
+#endif
+
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	// CH 0
+	tcon_frame_t *pFrame;
+	if(hspi == TCON_FRAME[0].pHspi) {
+
+		pFrame = &TCON_FRAME[0];
+		HAL_DMA_DeInit(pFrame->pHdma);
+		HAL_SPI_DeInit(pFrame->pHspi);
+		pFrame->complete = 1;
+	}
+	else if(hspi == TCON_FRAME[1].pHspi){
+		pFrame = &TCON_FRAME[1];
+		HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
+		HAL_DMA_DeInit(pFrame->pHdma);
+		HAL_SPI_DeInit(pFrame->pHspi);
+		pFrame->complete = 1;
+	}
+	else {
+		__asm volatile("NOP");
+	}
+
+}
+
+
 #if 0
 void HAL_GPIO_EXTI_Callback(uint16_t pin)
 {
@@ -48,20 +108,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t pin)
 	}
 }
 #endif
-#if 1
-void HAL_GPIO_EXTI_Callback(uint16_t pin)
-{
-	if(VSYNCI_Pin & pin && !tcon_vsyncFlag) {
-		HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
-		HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
-		HAL_SPI_Receive_DMA(pSpi, tcon_data, TCON_FRAME_LEN);
-		tcon_vsyncFlag = 1;
-	}
-	else {
-		__asm volatile("NOP");
-	}
-}
-#endif
+
+#if 0
 void TCON_add_data(uint8_t val)
 {
 	uint8_t *pData = (uint8_t *)TCON_FRAME.data;
@@ -92,13 +140,4 @@ void TCON_add_data(uint8_t val)
 		TCON_FRAME.idx++;
 	}
 }
-
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-	HAL_DMA_DeInit(&hdma_spi2_rx);
-	HAL_SPI_DeInit(&hspi2);
-	HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
-	tInd = tcon_data[0];
-	tchksum = tcon_data[TCON_FRAME_LEN-1];
-	tconFlag = 1;
-}
+#endif

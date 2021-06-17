@@ -12,15 +12,20 @@
 
 #define TCON_WIDTH	24
 #define TCON_HEIGHT	48
-#define TCON_FRAME_LEN	1011	//indicator + (24*42) + checksum
+#define TCON_INDICATOR_VAL		0xAA
+#define TCON_FRAME_LEN	1011	//indicator + cmd + (24*42) + checksum
+#define TCON_OFFSET_INDICATOR	0
+#define TCON_OFFSET_CMD			1
+#define TCON_OFFSET_CHKSUM		1010
+#define TCON_CH_NUM				2
 //#define TCON_FRAME_LEN	1	//indicator + (24*42) + checksum
 #define TCON_DATA_LEN	1008
-#define TCON_CHECKSUM_IDX	1009
 typedef struct {
-	uint32_t idx;
-	uint8_t indicator;
-	uint8_t data[TCON_HEIGHT][TCON_WIDTH];
-	uint8_t checksum;
+	uint8_t vsync;
+	uint8_t complete;
+	SPI_HandleTypeDef *pHspi;
+	DMA_HandleTypeDef *pHdma;
+	uint8_t data[TCON_FRAME_LEN];
 }tcon_frame_t;
 
 

@@ -72,6 +72,9 @@ void Error_Handler(void);
 #define EN_GPIO_Port GPIOC
 #define UART_GND_Pin GPIO_PIN_11
 #define UART_GND_GPIO_Port GPIOC
+#define VSYNCI2_Pin GPIO_PIN_2
+#define VSYNCI2_GPIO_Port GPIOD
+#define VSYNCI2_EXTI_IRQn EXTI2_IRQn
 #define SDI1_Pin GPIO_PIN_5
 #define SDI1_GPIO_Port GPIOB
 #define GP_IO_Pin GPIO_PIN_6
