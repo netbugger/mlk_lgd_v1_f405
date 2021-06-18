@@ -8,6 +8,7 @@
 #include "spi.h"
 #include "display.h"
 #include "lg_tcon.h"
+#include "printf.h"
 extern tcon_frame_t TCON_FRAME[];
 uint16_t DISPLAY[DISP_HEIGHT][DISP_WIDTH] = {
 		{0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000},
@@ -115,6 +116,7 @@ void DISP_conv_to_FRAME(void)
 
 void TCON_conv_to_DISPLAY(void)
 {
+	uint16_t max, lmax = 0;
 	int h, w;
 	for(h = 0; h < DISP_HEIGHT; h++) {
 		for(w = 0; w < DISP_WIDTH; w++) {
@@ -124,7 +126,15 @@ void TCON_conv_to_DISPLAY(void)
 			else {
 				DISPLAY[h][w] = ((uint16_t)TCON_FRAME[1].data[(h*24)+(w-24)+2])*16;
 			}
+#if 0
+			max = DISPLAY[h][w];
+			if(max > lmax) {
+				printf("max=%x\n", max);
+				lmax = max;
+			}
+#endif
 		}
 	}
+
 
 }

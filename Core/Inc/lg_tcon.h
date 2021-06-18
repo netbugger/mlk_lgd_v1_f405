@@ -28,7 +28,7 @@ typedef struct {
 	uint8_t data[TCON_FRAME_LEN];
 }tcon_frame_t;
 
-
+void TCON_init(void);
 
 
 #endif /* INC_LG_TCON_H_ */
