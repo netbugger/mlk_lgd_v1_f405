@@ -141,8 +141,8 @@ int main(void)
 				TCON_SPI_RESET();
 			}
 			else {
-				printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
-						TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
+				//printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
+				//		TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
 
 				// Check Sum
 				chksum[0] = TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] ^ TCON_FRAME[0].data[TCON_OFFSET_CMD];
@@ -155,17 +155,20 @@ int main(void)
 
 				// Verify checksum
 				if(chksum[0] != TCON_FRAME[0].data[TCON_OFFSET_CHKSUM] || chksum[1] != TCON_FRAME[1].data[TCON_OFFSET_CHKSUM] ) {
-					printf("CHKSUM Fail\n");
+					TCON_SPI_RESET();
+				}
+				else {
+					// Transfer Data
+					TCON_conv_to_DISPLAY();
+					void DISP_conv_to_FRAME();
+
+					TCON_SPI_RESET2();
+
+					// Send To MBI
+					MLK_SPI_write_frame_data();
 				}
 
-				// Transfer Data
-				TCON_conv_to_DISPLAY();
-				void DISP_conv_to_FRAME();
 
-				TCON_SPI_RESET2();
-
-				// Send To MBI
-				MLK_SPI_write_frame_data();
 
 #if 0
 				//HAL_Delay(1000);
