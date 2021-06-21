@@ -149,8 +149,8 @@ int main(void)
 				TCON_SPI_RESET();
 			}
 			else {
-				printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
-						TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
+				//printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
+				//		TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
 
 				//DWT_Delay_us(500);
 				// Check Sum
@@ -186,6 +186,10 @@ int main(void)
 		}
 		else {
 			__asm volatile("NOP");
+			i = TCON_FRAME[0].complete;
+			j = TCON_FRAME[1].complete;
+			k = TCON_FRAME[0].vsync;
+			l = TCON_FRAME[1].vsync;
 		}
 #endif
 
@@ -511,40 +515,53 @@ static void MX_GPIO_Init(void)
 inline void TCON_SPI_RESET(void)
 {
 	uint8_t c = 0;
-	HAL_DMA_DeInit(TCON_FRAME[0].pHdma);
-	HAL_DMA_DeInit(TCON_FRAME[1].pHdma);
-	HAL_SPI_DeInit(TCON_FRAME[0].pHspi);
-	HAL_SPI_DeInit(TCON_FRAME[1].pHspi);
+//	HAL_DMA_DeInit(TCON_FRAME[0].pHdma);
+//	HAL_DMA_DeInit(TCON_FRAME[1].pHdma);
+//	HAL_SPI_DeInit(TCON_FRAME[0].pHspi);
+//	HAL_SPI_DeInit(TCON_FRAME[1].pHspi);
 
 	MX_DMA_Init();
 	MX_SPI2_Init();
 	MX_SPI3_Init();
 
-	HAL_SPI_TransmitReceive(TCON_FRAME[0].pHspi, &c, &c, 1, 100);
-	HAL_SPI_TransmitReceive(TCON_FRAME[1].pHspi, &c, &c, 1, 100);
+	HAL_SPI_TransmitReceive(TCON_FRAME[0].pHspi, &c, &c, 1, 1000);
+	HAL_SPI_TransmitReceive(TCON_FRAME[1].pHspi, &c, &c, 1, 1000);
 
 	TCON_FRAME[0].complete = 0;
 	TCON_FRAME[0].vsync = 0;
 	TCON_FRAME[1].complete = 0;
 	TCON_FRAME[1].vsync = 0;
+
+	 HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+		  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+		  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+		  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
 inline void TCON_SPI_RESET2(void)
 {
-	HAL_DMA_DeInit(TCON_FRAME[0].pHdma);
-	HAL_DMA_DeInit(TCON_FRAME[1].pHdma);
-	HAL_SPI_DeInit(TCON_FRAME[0].pHspi);
-	HAL_SPI_DeInit(TCON_FRAME[1].pHspi);
+//	HAL_DMA_DeInit(TCON_FRAME[0].pHdma);
+//	HAL_DMA_DeInit(TCON_FRAME[1].pHdma);
+//	HAL_SPI_DeInit(TCON_FRAME[0].pHspi);
+//	HAL_SPI_DeInit(TCON_FRAME[1].pHspi);
 
 	MX_DMA_Init();
 	MX_SPI2_Init();
 	MX_SPI3_Init();
 
+//	HAL_NVIC_DisableIRQ(DMA1_Stream3_IRQn);
+//	HAL_NVIC_DisableIRQ(DMA1_Stream0_IRQn);
 	TCON_FRAME[0].complete = 0;
 	TCON_FRAME[0].vsync = 0;
 	TCON_FRAME[1].complete = 0;
 	TCON_FRAME[1].vsync = 0;
+	  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+	  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+	  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+	  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 //	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 //	HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 }

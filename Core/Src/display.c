@@ -121,10 +121,10 @@ void TCON_conv_to_DISPLAY(void)
 	for(h = 0; h < DISP_HEIGHT; h++) {
 		for(w = 0; w < DISP_WIDTH; w++) {
 			if( w < 24 ) {
-				DISPLAY[h][w] = ((uint16_t)TCON_FRAME[0].data[(h*24)+w+2])*16;
+				DISPLAY[h][w] = ((uint16_t)TCON_FRAME[0].data[(h*24)+w+2])*DISP_BRIGHT_UPSCALE;
 			}
 			else {
-				DISPLAY[h][w] = ((uint16_t)TCON_FRAME[1].data[(h*24)+(w-24)+2])*16;
+				DISPLAY[h][w] = ((uint16_t)TCON_FRAME[1].data[(h*24)+(w-24)+2])*DISP_BRIGHT_UPSCALE;
 			}
 #if 0
 			max = DISPLAY[h][w];

@@ -11,6 +11,8 @@
 #define DISP_WIDTH	48
 #define DISP_HEIGHT	42
 
+#define DISP_BRIGHT_UPSCALE	1	//16
+
 extern uint16_t DISPLAY[DISP_HEIGHT][DISP_WIDTH];
 
 void DISP_conv_to_FRAME(void);
