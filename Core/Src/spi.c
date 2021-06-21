@@ -47,56 +47,51 @@ void MLK_SPI_init(void)
 }
 
 
+inline void MLK_SPI_set_pin(GPIO_TypeDef* port, uint16_t pin)
+{
+	port->BSRR = pin;
+}
+
+inline void MLK_SPI_reset_pin(GPIO_TypeDef* port, uint16_t pin)
+{
+#if HW_STMF405
+	port->BSRR = pin << 16;
+#else
+	port->BRR = pin;
+#endif
+}
 
 inline void MLK_SPI_write_16bit_4ch(uint16_t val1, uint16_t val2, uint16_t val3, uint16_t val4)
 {
 	int i;
+	__disable_irq();
 	for(i=0; i<16; i++) {
 		if (val1 & (1 << (15 - i))) {
-			SDI[0].port->BSRR = SDI[0].pin;
+			MLK_SPI_set_pin(SDI[0].port, SDI[0].pin);
 		}
 		else {
-#if HW_STMF405
-			SDI[0].port->BSRR = SDI[0].pin <<16;
-#else
-			SDI[0].port->BRR = SDI[0].pin;
-#endif
+			MLK_SPI_reset_pin(SDI[0].port, SDI[0].pin);
 		}
 		if (val2 & (1 << (15 - i))) {
-			SDI[1].port->BSRR = SDI[1].pin;
+			MLK_SPI_set_pin(SDI[1].port, SDI[1].pin);
 		} else {
-#if HW_STMF405
-			SDI[1].port->BSRR = SDI[1].pin <<16;
-#else
-			SDI[1].port->BRR = SDI[1].pin;
-#endif
+			MLK_SPI_reset_pin(SDI[1].port, SDI[1].pin);
 		}
 		if (val3 & (1 << (15 - i))) {
-			SDI[2].port->BSRR = SDI[2].pin;
+			MLK_SPI_set_pin(SDI[2].port, SDI[2].pin);
 		} else {
-#if HW_STMF405
-			SDI[2].port->BSRR = SDI[2].pin <<16;
-#else
-			SDI[2].port->BRR = SDI[2].pin;
-#endif
+			MLK_SPI_reset_pin(SDI[2].port, SDI[2].pin);
 		}
 		if (val4 & (1 << (15 - i))) {
-			SDI[3].port->BSRR = SDI[3].pin;
+			MLK_SPI_set_pin(SDI[3].port, SDI[3].pin);
 		} else {
-#if HW_STMF405
-			SDI[3].port->BSRR = SDI[3].pin <<16;
-#else
-			SDI[3].port->BRR = SDI[3].pin;
-#endif
+			MLK_SPI_reset_pin(SDI[3].port, SDI[3].pin);
 		}
-		SW_SPI_SCLK_PORT->BSRR = SW_SPI_SCLK_PIN;
-#if HW_STMF405
-		SW_SPI_SCLK_PORT->BSRR = SW_SPI_SCLK_PIN <<16;
-#else
-		SW_SPI_SCLK_PORT->BRR = SW_SPI_SCLK_PIN;
-#endif
+		MLK_SPI_set_pin(SW_SPI_SCLK_PORT, SW_SPI_SCLK_PIN);
+		MLK_SPI_reset_pin(SW_SPI_SCLK_PORT, SW_SPI_SCLK_PIN);
 	}
 	HAL_GPIO_WritePin(SW_SPI_SCLK_PORT, SW_SPI_SCLK_PIN, GPIO_PIN_RESET);
+	__enable_irq();
 }
 
 inline void MLK_SPI_write_continous_data(continuous_data_t *pCont)

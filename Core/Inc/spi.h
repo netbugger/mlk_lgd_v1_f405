@@ -256,6 +256,8 @@ void mbi6334_read_reg3(uint16_t reg);
 void MLK_SPI_init(void);
 void MLK_SPI_write_single_data(uint16_t dev, uint16_t reg, uint16_t val);
 void MLK_SPI_write_continous_data(continuous_data_t *pCont);
+void MLK_SPI_set_pin(GPIO_TypeDef* port, uint16_t pin);
+void MLK_SPI_reset_pin(GPIO_TypeDef* port, uint16_t pin);
 void MLK_SPI_write_16bit_4ch(uint16_t val1, uint16_t val2, uint16_t val3, uint16_t val4);
 void MLK_DISP_config(void);
 void MLK_DISP_send_data(uint8_t broad, uint8_t dev, uint16_t val, uint8_t scan);
