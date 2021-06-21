@@ -41,15 +41,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t pin)
 		HAL_SPI_Receive_DMA(pFrame->pHspi, pFrame->data, TCON_FRAME_LEN);
 		pFrame->vsync = 1;
 	}
-	else if(VSYNCI2_Pin & pin && !TCON_FRAME[1].vsync) {
+	if(VSYNCI2_Pin & pin && !TCON_FRAME[1].vsync) {
 //		HAL_NVIC_DisableIRQ(EXTI2_IRQn);
 		pFrame = &TCON_FRAME[1];
 		HAL_SPI_Receive_DMA(pFrame->pHspi, pFrame->data, TCON_FRAME_LEN);
 		pFrame->vsync = 1;
 	}
-	else {
-		__asm volatile("NOP");
-	}
+	//else {
+	__asm volatile("NOP");
+	//}
 }
 #endif
 #endif
@@ -67,7 +67,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 
 		pFrame->complete = 1;
 	}
-	else if(hspi == TCON_FRAME[1].pHspi && !TCON_FRAME[1].complete){
+	if(hspi == TCON_FRAME[1].pHspi && !TCON_FRAME[1].complete){
 		pFrame = &TCON_FRAME[1];
 		HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
 		HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
@@ -76,9 +76,9 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 
 		pFrame->complete = 1;
 	}
-	else {
-		__asm volatile("NOP");
-	}
+	//else {
+	__asm volatile("NOP");
+	//}
 
 }
 
