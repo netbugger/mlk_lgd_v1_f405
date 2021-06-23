@@ -69,7 +69,6 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 	}
 	else if(hspi == TCON_FRAME[1].pHspi && !TCON_FRAME[1].complete){
 		pFrame = &TCON_FRAME[1];
-		HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
 		HAL_NVIC_DisableIRQ(DMA1_Stream0_IRQn);
 		HAL_DMA_DeInit(pFrame->pHdma);
 		HAL_SPI_DeInit(pFrame->pHspi);

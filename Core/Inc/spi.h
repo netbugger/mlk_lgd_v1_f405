@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "main.h"
 
+#define NOP_NUM		4
 #define HW_STMF405			1
 #define HW_SPI				0
 

@@ -144,6 +144,8 @@ int main(void)
 #if 1
 		if(TCON_FRAME[0].complete && TCON_FRAME[1].complete) {
 			uint8_t c = 0;
+			HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
+
 			if(TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL || TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL) {
 				printf("indicator fail\n");
 				TCON_SPI_RESET();
@@ -152,7 +154,6 @@ int main(void)
 				//printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
 				//		TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
 
-				//DWT_Delay_us(500);
 				// Check Sum
 				chksum[0] = TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] ^ TCON_FRAME[0].data[TCON_OFFSET_CMD];
 				chksum[1] = TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] ^ TCON_FRAME[1].data[TCON_OFFSET_CMD];
