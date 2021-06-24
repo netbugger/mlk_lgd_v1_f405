@@ -137,7 +137,7 @@ inline void MLK_SPI_write_continous_data(continuous_data_t *pCont)
 inline void MLK_SPI_write_single_data(uint16_t dev, uint16_t reg, uint16_t val)
 {
 	uint16_t data[3];
-	int i,j,k;
+	int i,j;
 
 	data[0] = dev;
 	data[1] = reg;

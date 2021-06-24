@@ -59,6 +59,7 @@ UART_HandleTypeDef huart4;
 uint8_t gVsyncFlag = 0;
 extern tcon_frame_t TCON_FRAME[];
 extern uint16_t DISPLAY[DISP_HEIGHT][DISP_WIDTH];
+extern uint8_t dispBrightUp;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,6 +116,16 @@ int main(void)
 	MX_SPI3_Init();
 	MX_UART4_Init();
 	/* USER CODE BEGIN 2 */
+	//Check Bright Multiplier
+	if (HAL_GPIO_ReadPin(X16_GPIO_Port, X16_Pin) == GPIO_PIN_RESET) {
+		dispBrightUp = 16;
+	} else if (HAL_GPIO_ReadPin(X8_GPIO_Port, X8_Pin) == GPIO_PIN_RESET) {
+		dispBrightUp = 8;
+	} else if (HAL_GPIO_ReadPin(X4_GPIO_Port, X4_Pin) == GPIO_PIN_RESET) {
+		dispBrightUp = 4;
+	} else if (HAL_GPIO_ReadPin(X2_GPIO_Port, X2_Pin) == GPIO_PIN_RESET) {
+		dispBrightUp = 2;
+	}
 
 	DWT_Delay_Init();
 	MLK_SPI_init();
@@ -131,24 +142,22 @@ int main(void)
 	TCON_FRAME[1].vsync = 0;
 //	DISP_conv_to_FRAME();
 //	MLK_SPI_write_frame_data();
-	/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 	while (1) {
-		/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-		/* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 		//printf("Hello\n");
 		//HAL_Delay(1000);
 #if 1
 		if (TCON_FRAME[0].complete && TCON_FRAME[1].complete) {
-			uint8_t c = 0;
 			HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
 
-			if (TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL
-			        || TCON_FRAME[1].data[TCON_OFFSET_INDICATOR]
-			                != TCON_INDICATOR_VAL) {
+			if (TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL ||
+					TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL) {
 				printf("indicator fail\n");
 				TCON_SPI_RESET();
 			} else {
@@ -214,7 +223,7 @@ int main(void)
 		//}
 #endif
 	}
-	/* USER CODE END 3 */
+  /* USER CODE END 3 */
 }
 
 /**
@@ -458,6 +467,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : X2_Pin X4_Pin */
+  GPIO_InitStruct.Pin = X2_Pin|X4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /*Configure GPIO pins : SCLK_Pin SDI1_Pin */
   GPIO_InitStruct.Pin = SCLK_Pin|SDI1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -471,6 +486,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : X8_Pin X16_Pin */
+  GPIO_InitStruct.Pin = X8_Pin|X16_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : EN_Pin UART_GND_Pin */
   GPIO_InitStruct.Pin = EN_Pin|UART_GND_Pin;
