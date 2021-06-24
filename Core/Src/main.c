@@ -85,36 +85,36 @@ void TCON_SPI_RESET2(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-	uint16_t i = 0, j = 0, k = 0, l = 0;
+	/* USER CODE BEGIN 1 */
+	uint16_t i = 0; // j = 0, k = 0, l = 0;
 	uint8_t chksum[2];
-	uint16_t linebuffer[48];
-  /* USER CODE END 1 */
+	//uint16_t linebuffer[48];
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-  TCON_init();
-  /* USER CODE END SysInit */
+	/* USER CODE BEGIN SysInit */
+	TCON_init();
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_TIM6_Init();
-  MX_SPI2_Init();
-  MX_SPI3_Init();
-  MX_UART4_Init();
-  /* USER CODE BEGIN 2 */
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_TIM6_Init();
+	MX_SPI2_Init();
+	MX_SPI3_Init();
+	MX_UART4_Init();
+	/* USER CODE BEGIN 2 */
 
 	DWT_Delay_Init();
 	MLK_SPI_init();
@@ -131,66 +131,61 @@ int main(void)
 	TCON_FRAME[1].vsync = 0;
 //	DISP_conv_to_FRAME();
 //	MLK_SPI_write_frame_data();
-  /* USER CODE END 2 */
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 	while (1) {
-    /* USER CODE END WHILE */
+		/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+		/* USER CODE BEGIN 3 */
 		//printf("Hello\n");
 		//HAL_Delay(1000);
 #if 1
-		if(TCON_FRAME[0].complete && TCON_FRAME[1].complete) {
+		if (TCON_FRAME[0].complete && TCON_FRAME[1].complete) {
 			uint8_t c = 0;
 			HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
 
-			if(TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL || TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL) {
+			if (TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL
+			        || TCON_FRAME[1].data[TCON_OFFSET_INDICATOR]
+			                != TCON_INDICATOR_VAL) {
 				printf("indicator fail\n");
 				TCON_SPI_RESET();
-			}
-			else {
+			} else {
 				//printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
 				//		TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
 
 				// Check Sum
-				chksum[0] = TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] ^ TCON_FRAME[0].data[TCON_OFFSET_CMD];
-				chksum[1] = TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] ^ TCON_FRAME[1].data[TCON_OFFSET_CMD];
-				for(i=2; i<TCON_FRAME_LEN-1; i++) {
+				chksum[0] = TCON_FRAME[0].data[TCON_OFFSET_INDICATOR]
+				        ^ TCON_FRAME[0].data[TCON_OFFSET_CMD];
+				chksum[1] = TCON_FRAME[1].data[TCON_OFFSET_INDICATOR]
+				        ^ TCON_FRAME[1].data[TCON_OFFSET_CMD];
+				for (i = 2; i < TCON_FRAME_LEN - 1; i++) {
 					chksum[0] ^= TCON_FRAME[0].data[i];
 					chksum[1] ^= TCON_FRAME[1].data[i];
 
 				}
 
 				// Verify checksum
-				if(chksum[0] != TCON_FRAME[0].data[TCON_OFFSET_CHKSUM] || chksum[1] != TCON_FRAME[1].data[TCON_OFFSET_CHKSUM] ) {
+				if (chksum[0] != TCON_FRAME[0].data[TCON_OFFSET_CHKSUM] ||
+						chksum[1] != TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]) {
 					printf("Checksum fail\n");
 					TCON_SPI_RESET();
-				}
-				else {
+				} else {
 					// Transfer Data
 					TCON_conv_to_DISPLAY();
 					DISP_conv_to_FRAME();
 
-
 					MLK_SPI_write_frame_data();
 					TCON_SPI_RESET2();
-
-		//			TCON_FRAME[0].complete = 0;
-		//			TCON_FRAME[1].complete = 0;
-		//			TCON_FRAME[0].vsync = 0;
-		//			TCON_FRAME[1].vsync = 0;
-					// Send To MBI
 				}
 			}
-		}
-		else {
+		} else {
 			__asm volatile("NOP");
-			i = TCON_FRAME[0].complete;
-			j = TCON_FRAME[1].complete;
-			k = TCON_FRAME[0].vsync;
-			l = TCON_FRAME[1].vsync;
+			//i = TCON_FRAME[0].complete;
+			//j = TCON_FRAME[1].complete;
+			//k = TCON_FRAME[0].vsync;
+			//l = TCON_FRAME[1].vsync;
 		}
 #endif
 
@@ -218,8 +213,8 @@ int main(void)
 		//	__asm volatile("NOP");
 		//}
 #endif
-  }
-  /* USER CODE END 3 */
+	}
+	/* USER CODE END 3 */
 }
 
 /**
@@ -533,11 +528,11 @@ inline void TCON_SPI_RESET(void)
 	TCON_FRAME[1].complete = 0;
 	TCON_FRAME[1].vsync = 0;
 
-	 HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
-		  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+	HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 
-		  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-		  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
@@ -558,11 +553,11 @@ inline void TCON_SPI_RESET2(void)
 	TCON_FRAME[0].vsync = 0;
 	TCON_FRAME[1].complete = 0;
 	TCON_FRAME[1].vsync = 0;
-	  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
-	  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+	HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 
-	  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-	  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 //	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 //	HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 }
