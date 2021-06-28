@@ -155,9 +155,8 @@ int main(void)
 		//HAL_Delay(1000);
 #if 1
 		if (TCON_FRAME[0].complete && TCON_FRAME[1].complete) {
-			HAL_TIM_Base_Stop_IT(&htim6);
+			//HAL_TIM_Base_Stop_IT(&htim6);
 			HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
-
 			if (TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL ||
 					TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL) {
 				printf("indicator fail\n");
@@ -189,7 +188,9 @@ int main(void)
 
 					MLK_SPI_write_frame_data();
 					TCON_SPI_RESET2();
-					HAL_TIM_Base_Start_IT(&htim6);
+					//__HAL_TIM_CLEAR_IT(&htim6 ,TIM_IT_UPDATE);
+					TIM6->CNT = 0;
+					//HAL_TIM_Base_Start_IT(&htim6);
 				}
 			}
 		} else {
@@ -367,13 +368,13 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = (840-1);
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 3332;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim6.Init.Period = 1666;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
   {
@@ -596,9 +597,17 @@ void VSYNC_set_freq(int hz)
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+	static int cnt = 0;
 	if (htim->Instance == TIM6) {
 		//gVsyncFlag = 1;
-		NVIC_SystemReset();
+		cnt++;
+		//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
+		//HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin,GPIO_PIN_SET);
+		//HAL_Delay(1000);
+		if(cnt > 1) {
+			NVIC_SystemReset();
+		}
+
 	}
 	else {
 		__asm volatile("NOP");
