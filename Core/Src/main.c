@@ -86,36 +86,36 @@ void TCON_SPI_RESET2(void);
   */
 int main(void)
 {
-	/* USER CODE BEGIN 1 */
+  /* USER CODE BEGIN 1 */
 	uint16_t i = 0; // j = 0, k = 0, l = 0;
 	uint8_t chksum[2];
 	//uint16_t linebuffer[48];
-	/* USER CODE END 1 */
+  /* USER CODE END 1 */
 
-	/* MCU Configuration--------------------------------------------------------*/
+  /* MCU Configuration--------------------------------------------------------*/
 
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
+  /* USER CODE BEGIN SysInit */
 	TCON_init();
-	/* USER CODE END SysInit */
+  /* USER CODE END SysInit */
 
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_DMA_Init();
-	MX_TIM6_Init();
-	MX_SPI2_Init();
-	MX_SPI3_Init();
-	MX_UART4_Init();
-	/* USER CODE BEGIN 2 */
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_TIM6_Init();
+  MX_SPI2_Init();
+  MX_SPI3_Init();
+  MX_UART4_Init();
+  /* USER CODE BEGIN 2 */
 	//Check Bright Multiplier
 	if (HAL_GPIO_ReadPin(X16_GPIO_Port, X16_Pin) == GPIO_PIN_RESET) {
 		dispBrightUp = 16;
@@ -137,9 +137,10 @@ int main(void)
 	HAL_Delay(10);
 
 	MLK_DISP_config();
-	HAL_TIM_Base_Start_IT(&htim6);
+
 	TCON_FRAME[0].vsync = 0;
 	TCON_FRAME[1].vsync = 0;
+	HAL_TIM_Base_Start_IT(&htim6);
 //	DISP_conv_to_FRAME();
 //	MLK_SPI_write_frame_data();
   /* USER CODE END 2 */
@@ -154,6 +155,7 @@ int main(void)
 		//HAL_Delay(1000);
 #if 1
 		if (TCON_FRAME[0].complete && TCON_FRAME[1].complete) {
+			HAL_TIM_Base_Stop_IT(&htim6);
 			HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
 
 			if (TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL ||
@@ -187,6 +189,7 @@ int main(void)
 
 					MLK_SPI_write_frame_data();
 					TCON_SPI_RESET2();
+					HAL_TIM_Base_Start_IT(&htim6);
 				}
 			}
 		} else {
@@ -364,8 +367,8 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = (840-1);
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 1666;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim6.Init.Period = 3332;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
@@ -594,7 +597,8 @@ void VSYNC_set_freq(int hz)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM6) {
-		gVsyncFlag = 1;
+		//gVsyncFlag = 1;
+		NVIC_SystemReset();
 	}
 	else {
 		__asm volatile("NOP");
