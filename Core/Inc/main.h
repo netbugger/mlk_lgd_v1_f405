@@ -76,6 +76,8 @@ void Error_Handler(void);
 #define X8_GPIO_Port GPIOC
 #define X16_Pin GPIO_PIN_8
 #define X16_GPIO_Port GPIOC
+#define TMODE_Pin GPIO_PIN_12
+#define TMODE_GPIO_Port GPIOA
 #define EN_Pin GPIO_PIN_10
 #define EN_GPIO_Port GPIOC
 #define UART_GND_Pin GPIO_PIN_11

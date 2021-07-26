@@ -86,7 +86,8 @@
 
 //Configuration 5
 //#define MLK_DEF_CONF5	0x0000
-#define MLK_DEF_CONF5	0x3307	//GCG(Global current gain) : 0x33(51), 5+(GCG/255)*25 mA = 6mA
+//#define MLK_DEF_CONF5	0x3307	//GCG(Global current gain) : 0x33(51), 5+(GCG/255)*25 mA = 6mA
+#define MLK_DEF_CONF5	0x8807	//GCG(Global current gain) : 0x88(136), 5+(GCG/255)*25 mA = 18mA
 
 //Configuration 6
 #define MBI6334_CONF6_DEGHOST_1		0x0000

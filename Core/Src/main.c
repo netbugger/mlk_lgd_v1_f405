@@ -140,6 +140,23 @@ int main(void)
 
 	TCON_FRAME[0].vsync = 0;
 	TCON_FRAME[1].vsync = 0;
+	/* Check Test Mode */
+	if(HAL_GPIO_ReadPin(TMODE_GPIO_Port, TMODE_Pin) == GPIO_PIN_RESET) {
+#define TEST_MODE_DIM	110
+		int h, w;
+		for(h = 0; h < DISP_HEIGHT; h ++) {
+			for(w = 0; w < DISP_WIDTH; w++) {
+				DISPLAY[h][w] = TEST_MODE_DIM*dispBrightUp;
+			}
+		}
+		DISP_conv_to_FRAME();
+		MLK_SPI_write_frame_data();
+		while(!HAL_GPIO_ReadPin(TMODE_GPIO_Port, TMODE_Pin)) {
+			HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
+			HAL_Delay(500);
+		}
+		NVIC_SystemReset();
+	}
 	HAL_TIM_Base_Start_IT(&htim6);
 //	DISP_conv_to_FRAME();
 //	MLK_SPI_write_frame_data();
@@ -496,6 +513,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : TMODE_Pin */
+  GPIO_InitStruct.Pin = TMODE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(TMODE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : EN_Pin UART_GND_Pin */
   GPIO_InitStruct.Pin = EN_Pin|UART_GND_Pin;
