@@ -24,12 +24,12 @@
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
 #include <string.h>
+#include <test_mode.h>
 #include "printf.h"
 #include "dwt_stm32_delay.h"
 #include "spi.h"
 #include "lg_tcon.h"
 #include "display.h"
-#include "config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -143,50 +143,7 @@ int main(void)
 	TCON_FRAME[1].vsync = 0;
 	/* Check Test Mode */
 	if(HAL_GPIO_ReadPin(TMODE_GPIO_Port, TMODE_Pin) == GPIO_PIN_RESET) {
-		int h, w;
-		uint8_t val;
-		uint8_t comm = 0;
-
-		load_config();
-
-		//Send Current Value
-		val = (uint8_t)'A';
-		HAL_UART_Transmit(&huart4, &val, 1, 1000);
-		val = (uint8_t)gConfig;
-		HAL_UART_Transmit(&huart4, &val, 1, 1000);
-
-		while(!HAL_GPIO_ReadPin(TMODE_GPIO_Port, TMODE_Pin)) {
-			for (h = 0; h < DISP_HEIGHT; h++) {
-				for (w = 0; w < DISP_WIDTH; w++) {
-					DISPLAY[h][w] = val * dispBrightUp;
-				}
-			}
-			DISP_conv_to_FRAME();
-			MLK_SPI_write_frame_data();
-			comm = 0;
-			if(HAL_UART_Receive(&huart4, (uint8_t *)&comm, 1, 1000) == HAL_TIMEOUT) {
-				//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
-				//HAL_Delay(200);
-				//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);;
-			}
-
-			if(comm == 'A') {
-				//HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_SET);
-				//HAL_Delay(1000);
-				//HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_RESET);
-				HAL_UART_Receive(&huart4, (uint8_t *)&comm, 1, HAL_MAX_DELAY);
-				val = comm;
-				gConfig = val;
-				if(save_config() == 0) {
-					HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_SET);
-					HAL_Delay(300);
-					HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_RESET);
-				}
-
-			}
-			//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
-		}
-
+		TESTMODE_execute();
 		NVIC_SystemReset();
 	}
 

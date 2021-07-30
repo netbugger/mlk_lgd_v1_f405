@@ -4,8 +4,8 @@
  *  Created on: 2021. 3. 22.
  *      Author: netbugger
  */
-#ifndef INC_CONFIG_H_
-#define INC_CONFIG_H_
+#ifndef INC_TEST_MODE_H_
+#define INC_TEST_MODE_H_
 
 #include "main.h"
 
@@ -15,9 +15,15 @@
 typedef uint32_t config_t;
 extern config_t gConfig;
 
+#define HEADER_LOAD	'L'
+#define HEADER_SET	'S'
+#define HEADER_RESULT	'R'
+
 // Function Prototype
 void load_config(void);
 int save_config(void);
 int erase_config(void);
+void TESTMODE_execute(void);
+void TESTMODE_send_data(uint8_t header, uint8_t payload);
 
-#endif /* INC_CONFIG_H_ */
+#endif /* INC_TEST_MODE_H_ */
