@@ -58,6 +58,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define UART_GND_Pin GPIO_PIN_3
+#define UART_GND_GPIO_Port GPIOC
 #define SDI4_Pin GPIO_PIN_2
 #define SDI4_GPIO_Port GPIOA
 #define SDI3_Pin GPIO_PIN_3
@@ -80,8 +82,8 @@ void Error_Handler(void);
 #define TMODE_GPIO_Port GPIOA
 #define EN_Pin GPIO_PIN_10
 #define EN_GPIO_Port GPIOC
-#define UART_GND_Pin GPIO_PIN_11
-#define UART_GND_GPIO_Port GPIOC
+#define IO_GND_Pin GPIO_PIN_11
+#define IO_GND_GPIO_Port GPIOC
 #define VSYNCI2_Pin GPIO_PIN_2
 #define VSYNCI2_GPIO_Port GPIOD
 #define VSYNCI2_EXTI_IRQn EXTI2_IRQn

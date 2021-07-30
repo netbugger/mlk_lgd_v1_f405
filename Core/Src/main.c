@@ -29,6 +29,7 @@
 #include "spi.h"
 #include "lg_tcon.h"
 #include "display.h"
+#include "config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -142,21 +143,53 @@ int main(void)
 	TCON_FRAME[1].vsync = 0;
 	/* Check Test Mode */
 	if(HAL_GPIO_ReadPin(TMODE_GPIO_Port, TMODE_Pin) == GPIO_PIN_RESET) {
-#define TEST_MODE_DIM	255
 		int h, w;
-		for(h = 0; h < DISP_HEIGHT; h ++) {
-			for(w = 0; w < DISP_WIDTH; w++) {
-				DISPLAY[h][w] = TEST_MODE_DIM*dispBrightUp;
-			}
-		}
-		DISP_conv_to_FRAME();
-		MLK_SPI_write_frame_data();
+		uint8_t val;
+		uint8_t comm = 0;
+
+		load_config();
+
+		//Send Current Value
+		val = (uint8_t)'A';
+		HAL_UART_Transmit(&huart4, &val, 1, 1000);
+		val = (uint8_t)gConfig;
+		HAL_UART_Transmit(&huart4, &val, 1, 1000);
+
 		while(!HAL_GPIO_ReadPin(TMODE_GPIO_Port, TMODE_Pin)) {
-			HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
-			HAL_Delay(500);
+			for (h = 0; h < DISP_HEIGHT; h++) {
+				for (w = 0; w < DISP_WIDTH; w++) {
+					DISPLAY[h][w] = val * dispBrightUp;
+				}
+			}
+			DISP_conv_to_FRAME();
+			MLK_SPI_write_frame_data();
+			comm = 0;
+			if(HAL_UART_Receive(&huart4, (uint8_t *)&comm, 1, 1000) == HAL_TIMEOUT) {
+				//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
+				//HAL_Delay(200);
+				//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);;
+			}
+
+			if(comm == 'A') {
+				//HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_SET);
+				//HAL_Delay(1000);
+				//HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_RESET);
+				HAL_UART_Receive(&huart4, (uint8_t *)&comm, 1, HAL_MAX_DELAY);
+				val = comm;
+				gConfig = val;
+				if(save_config() == 0) {
+					HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_SET);
+					HAL_Delay(300);
+					HAL_GPIO_WritePin(GP_IO_GPIO_Port, GP_IO_Pin, GPIO_PIN_RESET);
+				}
+
+			}
+			//HAL_GPIO_TogglePin(GP_IO_GPIO_Port, GP_IO_Pin);
 		}
+
 		NVIC_SystemReset();
 	}
+
 	HAL_TIM_Base_Start_IT(&htim6);
 //	DISP_conv_to_FRAME();
 //	MLK_SPI_write_frame_data();
@@ -177,7 +210,8 @@ int main(void)
 			if (TCON_FRAME[0].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL ||
 					TCON_FRAME[1].data[TCON_OFFSET_INDICATOR] != TCON_INDICATOR_VAL) {
 				printf("indicator fail\n");
-				TCON_SPI_RESET();
+				//TCON_SPI_RESET();
+				NVIC_SystemReset();
 			} else {
 				//printf("SPI : [%x, %x], [%x, %x]\n", TCON_FRAME[0].data[TCON_OFFSET_INDICATOR], TCON_FRAME[0].data[TCON_OFFSET_CHKSUM],
 				//		TCON_FRAME[1].data[TCON_OFFSET_INDICATOR], TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]);
@@ -197,7 +231,8 @@ int main(void)
 				if (chksum[0] != TCON_FRAME[0].data[TCON_OFFSET_CHKSUM] ||
 						chksum[1] != TCON_FRAME[1].data[TCON_OFFSET_CHKSUM]) {
 					printf("Checksum fail\n");
-					TCON_SPI_RESET();
+					//TCON_SPI_RESET();
+					NVIC_SystemReset();
 				} else {
 					// Transfer Data
 					TCON_conv_to_DISPLAY();
@@ -472,14 +507,21 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, UART_GND_Pin|CS_Pin|EN_Pin|IO_GND_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SDI4_Pin|SDI3_Pin|SDI2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SCLK_Pin|SDI1_Pin|GP_IO_Pin|GPIO_PIN_7
                           |VSYNC_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, CS_Pin|EN_Pin|UART_GND_Pin, GPIO_PIN_RESET);
+  /*Configure GPIO pins : UART_GND_Pin EN_Pin IO_GND_Pin */
+  GPIO_InitStruct.Pin = UART_GND_Pin|EN_Pin|IO_GND_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SDI4_Pin SDI3_Pin SDI2_Pin */
   GPIO_InitStruct.Pin = SDI4_Pin|SDI3_Pin|SDI2_Pin;
@@ -519,13 +561,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(TMODE_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : EN_Pin UART_GND_Pin */
-  GPIO_InitStruct.Pin = EN_Pin|UART_GND_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : VSYNCI2_Pin */
   GPIO_InitStruct.Pin = VSYNCI2_Pin;
