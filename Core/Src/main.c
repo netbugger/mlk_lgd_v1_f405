@@ -142,7 +142,7 @@ int main(void)
 	TCON_FRAME[1].vsync = 0;
 	/* Check Test Mode */
 	if(HAL_GPIO_ReadPin(TMODE_GPIO_Port, TMODE_Pin) == GPIO_PIN_RESET) {
-#define TEST_MODE_DIM	110
+#define TEST_MODE_DIM	255
 		int h, w;
 		for(h = 0; h < DISP_HEIGHT; h ++) {
 			for(w = 0; w < DISP_WIDTH; w++) {
